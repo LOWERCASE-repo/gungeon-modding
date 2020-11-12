@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace GungeonPlugin {
 	
-	[BepInPlugin("GungeonPlugin", "Gungeon Plugin", "")]
+	[BepInPlugin("GungeonPlugin", "Gungeon Plugin", "1.0")]
 	public class GungeonPlugin : BaseUnityPlugin {
 		
 		void Awake() {
@@ -23,8 +23,28 @@ namespace GungeonPlugin {
 		[HarmonyPostfix]
 		static void Postfix(Gun __instance) {
 			if (__instance.ClipShotsRemaining == 0) __instance.Reload();
+			if (__instance.HasChargedProjectileReady) __instance.CeaseAttack();
+			__instance.CurrentAmmo = __instance.GetBaseMaxAmmo() + 5;
 		}
 	}
+	
+	[HarmonyPatch(typeof(PlayerController), "DoConsumableBlank")]
+	class BlankPatch {
+		
+		[HarmonyPostfix]
+		static void Prefix(PlayerController __instance) {
+			if (__instance.Blanks <= 0) __instance.Blanks++;
+		}
+	}
+	
+	// [HarmonyPatch(typeof(Gun), "InfiniteAmmo", MethodType.Getter)]
+	// class AmmoPatch {
+	//
+	// 	[HarmonyPostfix]
+	// 	static void Postfix(ref bool __result) {
+	// 		__result = true;
+	// 	}
+	// }
 	
 	[HarmonyPatch(typeof(BraveInput), "ControllerFakeSemiAutoCooldown", MethodType.Getter)]
 	class SemiPatch {
@@ -32,15 +52,6 @@ namespace GungeonPlugin {
 		[HarmonyPostfix]
 		static void Postfix(ref float __result) {
 			__result = 0f;
-		}
-	}
-	
-	[HarmonyPatch(typeof(PlayerController), "AdjustInputVector")]
-	class CardinalPatch {
-		
-		[HarmonyPostfix]
-		static void PostFix(Vector2 ___rawInput, ref Vector2 __result) {
-			__result = ___rawInput;
 		}
 	}
 }
